@@ -1,0 +1,112 @@
+import pyspark
+
+spark
+
+matriculas = (
+                spark
+                .read
+                .format('csv')
+                .option('header', True)
+                .option('inferSchema', True)
+                .option('delimiter', '|')
+                .load('s3://datalake-anacrsoares-688125619919/raw-data/dados-censo-2020/')
+                )
+
+(
+    matriculas
+    .write
+    .mode('overwrite')
+    .format('parquet')
+    .save("s3://datalake-anacrsoares-688125619919/staging-zone/dados-censo-2020")
+)
+
+matriculas_pt = (
+                 spark
+                 .read
+                 .format('parquet')
+                 .option('inferSchema', True)
+                 .load("s3://datalake-anacrsoares-688125619919/staging-zone/dados-censo-2020")
+                 )
+
+matriculas_pt.printSchema()
+
+from pyspark.sql.functions import col, max, min, count, mean
+
+type(matriculas_pt)
+
+
+
+from pyspark.sql.functions import *
+(
+    matriculas_pt
+    .groupBy("CO_UF")
+    .agg(
+        count((col("ID_MATRICULA")))
+        )
+    .sort(desc("count(ID_MATRICULA)"))
+    .show()
+)
+
+(    matriculas
+    .select("TP_ZONA_RESIDENCIAL", "CO_UF")
+    .where(col("TP_ZONA_RESIDENCIAL") == 2)
+    .where(col("CO_UF") == 31)
+    .count()
+)
+
+(
+    matriculas
+    .select("TP_ZONA_RESIDENCIAL", "CO_UF")
+    .where(col("TP_ZONA_RESIDENCIAL") == 1)
+    .where(col("CO_UF") == 35)
+    .count()
+)
+
+(
+    matriculas
+    .select("TP_SEXO", "CO_UF", "IN_AUTISMO")
+    .where(col("TP_SEXO") == 1)
+    .where(col("CO_UF") == 32)
+    .where(col("IN_AUTISMO") == 1)    
+    .count()
+)
+
+(
+    matriculas
+    .select("TP_SEXO", "IN_CEGUEIRA", "CO_UF", "ID_MATRICULA")
+    .where(col("TP_SEXO") == 2)
+    .where(col("IN_CEGUEIRA") == 1)
+    .groupBy("CO_UF")
+    .agg(
+        count((col("ID_MATRICULA"))).alias("total_alunas_cegueira")
+        )
+    .sort(desc("total_alunas_cegueira"))
+    .show(5)
+)
+
+(
+    matriculas
+    .select("TP_SEXO", "IN_SURDEZ", "CO_UF", "ID_MATRICULA")
+    .where(col("TP_SEXO") == 2)
+    .where(col("IN_SURDEZ") == 1)
+    .groupBy("CO_UF")
+    .agg(
+        count((col("ID_MATRICULA"))).alias("total_alunas_surdez")
+        )
+    .sort(desc("total_alunas_surdez"))
+    .show()
+)
+
+1117-1012
+
+(
+    matriculas
+    .select("TP_ETAPA_ENSINO", "CO_UF", "ID_MATRICULA")
+    .where(col("TP_ETAPA_ENSINO") == 41)
+    .groupBy("CO_UF")
+    .agg(
+        count((col("ID_MATRICULA"))).alias("total_alunos_nono")
+        )
+    .sort(asc("total_alunos_nono"))
+    .show()
+)
